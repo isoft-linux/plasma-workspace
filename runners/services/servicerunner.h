@@ -22,8 +22,10 @@
 
 #include <KService>
 
-//#include <KRunner/AbstractRunner>
 #include <krunner/abstractrunner.h>
+#if HAVE_KJIEBA
+#include <KJieba/KJieba_Interface>
+#endif
 
 /**
  * This class looks for matches in the set of .desktop files installed by
@@ -50,6 +52,11 @@ class ServiceRunner : public Plasma::AbstractRunner
 
     protected:
         void setupMatch(const KService::Ptr &service, Plasma::QueryMatch &action);
+
+#if HAVE_KJIEBA
+    private:
+        KJieba::KJiebaInterface *kjieba = nullptr;
+#endif
 };
 
 

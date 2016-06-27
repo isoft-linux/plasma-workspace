@@ -100,6 +100,19 @@ set_package_properties(KF5Wayland PROPERTIES
                        TYPE REQUIRED
                        PURPOSE "Required for Wayland integration of plasmashell")
 
+find_package(KJieba)
+set_package_properties(KJieba PROPERTIES
+    DESCRIPTION "Qt-style API to use yanyiwu's libcppjieba Chinese word segmentation DBus service"
+    URL "https://github.com/isoft-linux/kjieba"
+    TYPE OPTIONAL
+    PURPOSE "Use libcppjieba to segment Chinese word"
+)
+set(HAVE_KJIEBA FALSE)
+if (KJieba_FOUND)
+    add_definitions(-DHAVE_KJIEBA)
+    set(HAVE_KJIEBA TRUE)
+endif()
+
 include(ConfigureChecks.cmake)
 
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")

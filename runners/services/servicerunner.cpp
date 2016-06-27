@@ -30,6 +30,9 @@
 #include <KRun>
 #include <KService>
 #include <KServiceTypeTrader>
+#if HAVE_KJIEBA
+#include <KServiceOffer>
+#endif
 
 ServiceRunner::ServiceRunner(QObject *parent, const QVariantList &args)
     : Plasma::AbstractRunner(parent, args)
@@ -40,10 +43,20 @@ ServiceRunner::ServiceRunner(QObject *parent, const QVariantList &args)
     setPriority(AbstractRunner::HighestPriority);
 
     addSyntax(Plasma::RunnerSyntax(QStringLiteral(":q:"), i18n("Finds applications whose name or description match :q:")));
+
+#if HAVE_KJIEBA
+    kjieba = new KJieba::KJiebaInterface;
+#endif
 }
 
 ServiceRunner::~ServiceRunner()
 {
+#if HAVE_KJIEBA
+    if (kjieba) {
+        delete kjieba;
+        kjieba = nullptr;
+    }
+#endif
 }
 
 QStringList ServiceRunner::categories() const
@@ -75,11 +88,36 @@ void ServiceRunner::match(Plasma::RunnerContext &context)
     QString query;
 
     if (term.length() > 1) {
+#if HAVE_KJIEBA
+        KService::List services;
+        const KServiceOfferList offers = KServiceTypeTrader::weightedOffers("Application");
+
+        KServiceOfferList::const_iterator itOff = offers.begin();
+        for (; itOff != offers.end(); ++itOff) {
+            services.append((*itOff).service());
+        }
+
+        KService::List::iterator it = services.begin();
+        while (it != services.end()) {
+            if ((*it)->exec().isEmpty() ||
+                (!kjieba->query((*it)->genericName()).contains(term) &&
+                 !kjieba->topinyin((*it)->genericName()).contains(term) &&
+                 !kjieba->topinyin((*it)->genericName(), false).contains(term) &&
+                 !kjieba->query((*it)->name()).contains(term) &&
+                 !kjieba->topinyin((*it)->name()).contains(term) &&
+                 !kjieba->topinyin((*it)->name(), false).contains(term))) {
+                it = services.erase(it);
+            } else {
+                ++it;
+            }
+        }
+#else
         // Search for applications which are executable and case-insensitively match the search term
         // See http://techbase.kde.org/Development/Tutorials/Services/Traders#The_KTrader_Query_Language
         // if the following is unclear to you.
         query = QStringLiteral("exist Exec and ('%1' =~ Name)").arg(term);
         KService::List services = KServiceTypeTrader::self()->query(QStringLiteral("Application"), query);
+#endif
 
         if (!services.isEmpty()) {
             //qDebug() << service->name() << "is an exact match!" << service->storageId() << service->exec();

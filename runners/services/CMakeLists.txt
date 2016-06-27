@@ -13,6 +13,10 @@ target_link_libraries(krunner_services
     KF5::Activities
 )
 
+if(HAVE_KJIEBA)
+    target_link_libraries(krunner_services KJieba::KJieba)
+endif()
+
 install(TARGETS krunner_services DESTINATION ${KDE_INSTALL_PLUGINDIR} )
 
 install(FILES plasma-runner-services.desktop DESTINATION ${KDE_INSTALL_KSERVICES5DIR})
