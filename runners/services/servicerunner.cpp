@@ -30,9 +30,6 @@
 #include <KRun>
 #include <KService>
 #include <KServiceTypeTrader>
-#if HAVE_KJIEBA
-#include <KServiceOffer>
-#endif
 
 ServiceRunner::ServiceRunner(QObject *parent, const QVariantList &args)
     : Plasma::AbstractRunner(parent, args)
@@ -89,14 +86,7 @@ void ServiceRunner::match(Plasma::RunnerContext &context)
 
     if (term.length() > 1) {
 #if HAVE_KJIEBA
-        KService::List services;
-        const KServiceOfferList offers = KServiceTypeTrader::weightedOffers("Application");
-
-        KServiceOfferList::const_iterator itOff = offers.begin();
-        for (; itOff != offers.end(); ++itOff) {
-            services.append((*itOff).service());
-        }
-
+        KService::List services = KServiceTypeTrader::self()->query("Application");
         KService::List::iterator it = services.begin();
         while (it != services.end()) {
             if ((*it)->exec().isEmpty() ||
